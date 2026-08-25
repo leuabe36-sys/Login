@@ -19,31 +19,32 @@ export default {
 
     // CORS for local dev / calling the API from a different origin than the Worker.
     if (request.method === "OPTIONS") {
-      return withCors(new Response(null, { status: 204 }));
+      return withCors(new Response(null, { status: 204 }), request);
     }
 
     try {
       if (url.pathname === "/api/signup" && request.method === "POST") {
-        return withCors(await handleSignup(request, env));
+        return withCors(await handleSignup(request, env), request);
       }
       if (url.pathname === "/api/login" && request.method === "POST") {
-        return withCors(await handleLogin(request, env));
+        return withCors(await handleLogin(request, env), request);
       }
       if (url.pathname === "/api/me" && request.method === "GET") {
-        return withCors(await handleMe(request, env));
+        return withCors(await handleMe(request, env), request);
       }
       if (url.pathname === "/api/logout" && request.method === "POST") {
-        return withCors(handleLogout());
+        return withCors(handleLogout(), request);
       }
     } catch (err) {
-      return withCors(json({ error: "Something went wrong." }, 500));
+      console.error("Unhandled error:", err);
+      return withCors(json({ error: "Something went wrong." }, 500), request);
     }
 
     if (!url.pathname.startsWith("/api/")) {
       return env.ASSETS.fetch(request);
     }
 
-    return withCors(json({ error: "Not found." }, 404));
+    return withCors(json({ error: "Not found." }, 404), request);
   },
 };
 
@@ -231,9 +232,15 @@ function json(data, status = 200, extraHeaders = []) {
   return new Response(JSON.stringify(data), { status, headers });
 }
 
-function withCors(response) {
+function withCors(response, request) {
   const headers = new Headers(response.headers);
-  headers.set("Access-Control-Allow-Origin", "*");
+  // Browsers reject "Access-Control-Allow-Origin: *" combined with
+  // "Access-Control-Allow-Credentials: true" (used because the frontend
+  // fetches with credentials: "include"). Reflect the actual request origin
+  // instead so credentialed cross-origin requests aren't silently dropped.
+  const origin = request ? request.headers.get("Origin") : null;
+  headers.set("Access-Control-Allow-Origin", origin || "*");
+  headers.set("Vary", "Origin");
   headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   headers.set("Access-Control-Allow-Headers", "Content-Type");
   headers.set("Access-Control-Allow-Credentials", "true");
