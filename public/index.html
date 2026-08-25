@@ -367,25 +367,50 @@
   // Point this at your deployed Worker (or leave as "" to call same-origin /api/*).
   const API_BASE = "";
 
+  // Surface any unexpected JS error instead of failing silently ("nothing happens").
+  window.addEventListener("error", function (e) {
+    console.error("Unhandled error:", e.error || e.message);
+    var b = document.getElementById("banner");
+    if (b) {
+      b.textContent = "Something went wrong loading the page. Check the console for details.";
+      b.className = "banner error";
+    }
+  });
+
   const state = { mode: "login", turnstileToken: null, widgetId: null }; // "login" | "signup"
 
-  function renderTurnstile() {
+  function renderTurnstile(retriesLeft) {
+    if (retriesLeft === undefined) retriesLeft = 50; // ~5s before giving up
     if (!window.turnstile) {
-      // Script not ready yet — try again shortly.
-      setTimeout(renderTurnstile, 100);
+      if (retriesLeft <= 0) {
+        showBanner(
+          "Verification widget failed to load. Check your connection or disable ad/script blockers, then reload.",
+          "error"
+        );
+        return;
+      }
+      setTimeout(function () { renderTurnstile(retriesLeft - 1); }, 100);
       return;
     }
-    if (state.widgetId !== null) {
-      window.turnstile.remove(state.widgetId);
+    try {
+      if (state.widgetId !== null) {
+        window.turnstile.remove(state.widgetId);
+      }
+      state.turnstileToken = null;
+      state.widgetId = window.turnstile.render("#turnstileWidget", {
+        sitekey: "0x4AAAAAAEbAlV3VW5f7PR-e",
+        action: state.mode, // "login" or "signup" — checked server-side too
+        callback: function (token) {
+          state.turnstileToken = token;
+        },
+        "error-callback": function () {
+          showBanner("Verification failed to load. Please reload the page.", "error");
+        },
+      });
+    } catch (err) {
+      console.error("Turnstile render failed:", err);
+      showBanner("Couldn't load the verification widget. Please reload the page.", "error");
     }
-    state.turnstileToken = null;
-    state.widgetId = window.turnstile.render("#turnstileWidget", {
-      sitekey: "0x4AAAAAAEbAlV3VW5f7PR-e",
-      action: state.mode, // "login" or "signup" — checked server-side too
-      callback: function (token) {
-        state.turnstileToken = token;
-      },
-    });
   }
 
   const els = {
@@ -463,7 +488,19 @@
         credentials: "include",
         body: JSON.stringify({ email, password, turnstileToken: state.turnstileToken }),
       });
-      const data = await res.json();
+
+      let data;
+      try {
+        data = await res.json();
+      } catch (parseErr) {
+        console.error("Response wasn't JSON — endpoint may be missing or misrouted:", parseErr);
+        showBanner(
+          "Server returned an unexpected response (status " + res.status + "). Check that the Worker is deployed and /api/" +
+            state.mode + " is reachable.",
+          "error"
+        );
+        return;
+      }
 
       if (!res.ok) {
         showBanner(data.error || "Something went wrong.", "error");
@@ -472,6 +509,7 @@
 
       showSuccess(data.email);
     } catch (err) {
+      console.error("Signup/login request failed:", err);
       showBanner("Couldn't reach the server. Check your connection and try again.", "error");
     } finally {
       els.submitBtn.disabled = false;
