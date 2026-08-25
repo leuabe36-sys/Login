@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sign in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0F1319;
+    --panel: #161B22;
+    --panel-2: #1C222B;
+    --border: #262D38;
+    --text: #EDEFF3;
+    --muted: #8992A3;
+    --accent: #F17B3C;
+    --accent-dim: #43301F;
+    --edge: #34D6A6;
+    --error: #FF6B6B;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    display: flex;
+  }
+
+  .stage {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+  }
+
+  /* ---------- Left: signature edge panel ---------- */
+  .brand {
+    flex: 1;
+    display: none;
+    position: relative;
+    padding: 48px;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(241,123,60,0.10), transparent 45%),
+      radial-gradient(circle at 80% 75%, rgba(52,214,166,0.08), transparent 40%),
+      var(--panel);
+    border-right: 1px solid var(--border);
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+  }
+
+  @media (min-width: 860px) {
+    .brand { display: flex; }
+  }
+
+  .brand-top .mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.02em;
+  }
+
+  .mark .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-dim);
+  }
+
+  .brand-copy {
+    max-width: 360px;
+    margin-top: 40px;
+  }
+
+  .brand-copy h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 30px;
+    line-height: 1.25;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 12px;
+  }
+
+  .brand-copy p {
+    color: var(--muted);
+    font-size: 14.5px;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* Signature element: a small edge-route trace */
+  .route {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-top: 32px;
+  }
+
+  .route .row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 0;
+  }
+
+  .route .row .label { flex: 1; color: var(--text); }
+  .route .row .ms { color: var(--edge); }
+
+  .route .pulse {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--edge);
+    flex-shrink: 0;
+    animation: blink 1.8s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.25; }
+  }
+
+  .brand-foot {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+  }
+
+  /* ---------- Right: form ---------- */
+  .panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 380px;
+  }
+
+  .card h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 6px;
+  }
+
+  .card .sub {
+    color: var(--muted);
+    font-size: 14px;
+    margin: 0 0 28px;
+  }
+
+  .field { margin-bottom: 16px; }
+
+  .field label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .field input {
+    width: 100%;
+    padding: 11px 13px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14.5px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  .field input:focus {
+    border-color: var(--accent);
+  }
+
+  .field input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  button.submit {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    background: var(--accent);
+    color: #1A0E05;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14.5px;
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.05s ease;
+  }
+
+  button.submit:hover { filter: brightness(1.08); }
+  button.submit:active { transform: scale(0.99); }
+  button.submit:disabled { opacity: 0.6; cursor: not-allowed; }
+  button.submit:focus-visible { outline: 2px solid var(--edge); outline-offset: 2px; }
+
+  .switcher {
+    text-align: center;
+    margin-top: 22px;
+    font-size: 13.5px;
+    color: var(--muted);
+  }
+
+  .switcher button {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-weight: 600;
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .banner {
+    display: none;
+    font-size: 13px;
+    padding: 10px 13px;
+    border-radius: 8px;
+    margin-bottom: 18px;
+    line-height: 1.45;
+  }
+
+  .banner.error {
+    display: block;
+    background: rgba(255,107,107,0.08);
+    border: 1px solid rgba(255,107,107,0.3);
+    color: var(--error);
+  }
+
+  .banner.ok {
+    display: block;
+    background: rgba(52,214,166,0.08);
+    border: 1px solid rgba(52,214,166,0.3);
+    color: var(--edge);
+  }
+
+  .success-state {
+    display: none;
+    text-align: center;
+  }
+
+  .success-state.show { display: block; }
+  .card.form-view.hide { display: none; }
+
+  .success-state .avatar {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    margin: 0 auto 18px;
+  }
+
+  .success-state p.email {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    color: var(--text);
+    margin: 4px 0 24px;
+  }
+
+  .link-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13.5px;
+    cursor: pointer;
+  }
+  .link-btn:hover { border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <!-- Signature left panel -->
+  <aside class="brand">
+    <div class="brand-top">
+      <span class="mark"><span class="dot"></span>Nodepass</span>
+    </div>
+
+    <div class="brand-copy">
+      <h1>Authentication that lives on the edge, not one server.</h1>
+      <p>Your credentials are verified at the nearest Cloudflare location — no origin round-trip, no single point of failure.</p>
+
+      <div class="route" aria-hidden="true">
+        <div class="row"><span class="pulse"></span><span class="label">Request received — edge</span><span class="ms">2 ms</span></div>
+        <div class="row"><span class="pulse"></span><span class="label">Credential check — D1</span><span class="ms">9 ms</span></div>
+        <div class="row"><span class="pulse"></span><span class="label">Session issued</span><span class="ms">1 ms</span></div>
+      </div>
+    </div>
+
+    <div class="brand-foot">SERVED FROM THE CLOUDFLARE NETWORK</div>
+  </aside>
+
+  <!-- Form panel -->
+  <main class="panel">
+    <div class="card form-view" id="formView">
+      <h2 id="formTitle">Welcome back</h2>
+      <p class="sub" id="formSub">Sign in with your email and password.</p>
+
+      <div class="banner" id="banner"></div>
+
+      <form id="authForm" novalidate>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" autocomplete="email" placeholder="you@example.com" required />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" autocomplete="current-password" placeholder="••••••••" required minlength="8" />
+          <div class="hint" id="pwHint" style="display:none;">At least 8 characters.</div>
+        </div>
+        <button type="submit" class="submit" id="submitBtn">Sign in</button>
+      </form>
+
+      <div class="switcher">
+        <span id="switcherText">New here?</span>
+        <button type="button" id="switcherBtn">Create an account</button>
+      </div>
+    </div>
+
+    <div class="card success-state" id="successView">
+      <div class="avatar" id="avatarInitial">A</div>
+      <h2>You're in</h2>
+      <p class="email" id="successEmail"></p>
+      <button class="link-btn" id="signOutBtn">Sign out</button>
+    </div>
+  </main>
+</div>
+
+<script>
+  // Point this at your deployed Worker (or leave as "" to call same-origin /api/*).
+  const API_BASE = "";
+
+  const state = { mode: "login" }; // "login" | "signup"
+
+  const els = {
+    formView: document.getElementById("formView"),
+    successView: document.getElementById("successView"),
+    title: document.getElementById("formTitle"),
+    sub: document.getElementById("formSub"),
+    switcherText: document.getElementById("switcherText"),
+    switcherBtn: document.getElementById("switcherBtn"),
+    form: document.getElementById("authForm"),
+    email: document.getElementById("email"),
+    password: document.getElementById("password"),
+    pwHint: document.getElementById("pwHint"),
+    submitBtn: document.getElementById("submitBtn"),
+    banner: document.getElementById("banner"),
+    successEmail: document.getElementById("successEmail"),
+    avatarInitial: document.getElementById("avatarInitial"),
+    signOutBtn: document.getElementById("signOutBtn"),
+  };
+
+  function setMode(mode) {
+    state.mode = mode;
+    const isSignup = mode === "signup";
+    els.title.textContent = isSignup ? "Create your account" : "Welcome back";
+    els.sub.textContent = isSignup
+      ? "It takes about ten seconds."
+      : "Sign in with your email and password.";
+    els.submitBtn.textContent = isSignup ? "Create account" : "Sign in";
+    els.switcherText.textContent = isSignup ? "Already have an account?" : "New here?";
+    els.switcherBtn.textContent = isSignup ? "Sign in" : "Create an account";
+    els.pwHint.style.display = isSignup ? "block" : "none";
+    els.password.setAttribute("autocomplete", isSignup ? "new-password" : "current-password");
+    hideBanner();
+  }
+
+  function showBanner(message, kind) {
+    els.banner.textContent = message;
+    els.banner.className = "banner " + kind;
+  }
+  function hideBanner() {
+    els.banner.className = "banner";
+    els.banner.textContent = "";
+  }
+
+  els.switcherBtn.addEventListener("click", () => {
+    setMode(state.mode === "login" ? "signup" : "login");
+  });
+
+  els.form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hideBanner();
+
+    const email = els.email.value.trim();
+    const password = els.password.value;
+
+    if (state.mode === "signup" && password.length < 8) {
+      showBanner("Password must be at least 8 characters.", "error");
+      return;
+    }
+
+    els.submitBtn.disabled = true;
+    els.submitBtn.textContent = state.mode === "signup" ? "Creating account…" : "Signing in…";
+
+    try {
+      const endpoint = state.mode === "signup" ? "/api/signup" : "/api/login";
+      const res = await fetch(API_BASE + endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showBanner(data.error || "Something went wrong.", "error");
+        return;
+      }
+
+      showSuccess(data.email);
+    } catch (err) {
+      showBanner("Couldn't reach the server. Check your connection and try again.", "error");
+    } finally {
+      els.submitBtn.disabled = false;
+      setMode(state.mode);
+    }
+  });
+
+  function showSuccess(email) {
+    els.formView.classList.add("hide");
+    els.successView.classList.add("show");
+    els.successEmail.textContent = email;
+    els.avatarInitial.textContent = (email[0] || "?").toUpperCase();
+  }
+
+  els.signOutBtn.addEventListener("click", async () => {
+    try {
+      await fetch(API_BASE + "/api/logout", { method: "POST", credentials: "include" });
+    } catch {}
+    els.successView.classList.remove("show");
+    els.formView.classList.remove("hide");
+    els.form.reset();
+    setMode("login");
+  });
+
+  // If already signed in (valid session cookie), skip straight to the success view.
+  (async function checkSession() {
+    try {
+      const res = await fetch(API_BASE + "/api/me", { credentials: "include" });
+      const data = await res.json();
+      if (data.authenticated) showSuccess(data.email);
+    } catch {}
+  })();
+
+  setMode("login");
+</script>
+
+</body>
+</html>
