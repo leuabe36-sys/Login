@@ -6,6 +6,7 @@
 <title>Sign in</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <style>
   :root {
     --bg: #0F1319;
@@ -343,6 +344,7 @@
           <input type="password" id="password" name="password" autocomplete="current-password" placeholder="••••••••" required minlength="8" />
           <div class="hint" id="pwHint" style="display:none;">At least 8 characters.</div>
         </div>
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAAEbAlV3VW5f7PR-e" data-callback="onTurnstileSuccess" style="margin-bottom:16px;"></div>
         <button type="submit" class="submit" id="submitBtn">Sign in</button>
       </form>
 
@@ -365,7 +367,11 @@
   // Point this at your deployed Worker (or leave as "" to call same-origin /api/*).
   const API_BASE = "";
 
-  const state = { mode: "login" }; // "login" | "signup"
+  const state = { mode: "login", turnstileToken: null }; // "login" | "signup"
+
+  window.onTurnstileSuccess = function (token) {
+    state.turnstileToken = token;
+  };
 
   const els = {
     formView: document.getElementById("formView"),
@@ -425,6 +431,11 @@
       return;
     }
 
+    if (!state.turnstileToken) {
+      showBanner("Please complete the verification check.", "error");
+      return;
+    }
+
     els.submitBtn.disabled = true;
     els.submitBtn.textContent = state.mode === "signup" ? "Creating account…" : "Signing in…";
 
@@ -434,7 +445,7 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, turnstileToken: state.turnstileToken }),
       });
       const data = await res.json();
 
@@ -449,6 +460,8 @@
     } finally {
       els.submitBtn.disabled = false;
       setMode(state.mode);
+      if (window.turnstile) window.turnstile.reset();
+      state.turnstileToken = null;
     }
   });
 
