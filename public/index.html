@@ -6,7 +6,7 @@
 <title>Sign in</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <style>
   :root {
     --bg: #0F1319;
@@ -344,7 +344,7 @@
           <input type="password" id="password" name="password" autocomplete="current-password" placeholder="••••••••" required minlength="8" />
           <div class="hint" id="pwHint" style="display:none;">At least 8 characters.</div>
         </div>
-        <div class="cf-turnstile" data-sitekey="0x4AAAAAAEbAlV3VW5f7PR-e" data-callback="onTurnstileSuccess" style="margin-bottom:16px;"></div>
+        <div id="turnstileWidget" style="margin-bottom:16px;"></div>
         <button type="submit" class="submit" id="submitBtn">Sign in</button>
       </form>
 
@@ -367,11 +367,26 @@
   // Point this at your deployed Worker (or leave as "" to call same-origin /api/*).
   const API_BASE = "";
 
-  const state = { mode: "login", turnstileToken: null }; // "login" | "signup"
+  const state = { mode: "login", turnstileToken: null, widgetId: null }; // "login" | "signup"
 
-  window.onTurnstileSuccess = function (token) {
-    state.turnstileToken = token;
-  };
+  function renderTurnstile() {
+    if (!window.turnstile) {
+      // Script not ready yet — try again shortly.
+      setTimeout(renderTurnstile, 100);
+      return;
+    }
+    if (state.widgetId !== null) {
+      window.turnstile.remove(state.widgetId);
+    }
+    state.turnstileToken = null;
+    state.widgetId = window.turnstile.render("#turnstileWidget", {
+      sitekey: "0x4AAAAAAEbAlV3VW5f7PR-e",
+      action: state.mode, // "login" or "signup" — checked server-side too
+      callback: function (token) {
+        state.turnstileToken = token;
+      },
+    });
+  }
 
   const els = {
     formView: document.getElementById("formView"),
@@ -404,6 +419,7 @@
     els.pwHint.style.display = isSignup ? "block" : "none";
     els.password.setAttribute("autocomplete", isSignup ? "new-password" : "current-password");
     hideBanner();
+    renderTurnstile();
   }
 
   function showBanner(message, kind) {
@@ -460,8 +476,6 @@
     } finally {
       els.submitBtn.disabled = false;
       setMode(state.mode);
-      if (window.turnstile) window.turnstile.reset();
-      state.turnstileToken = null;
     }
   });
 
