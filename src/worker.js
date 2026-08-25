@@ -48,8 +48,11 @@ export default {
 };
 
 async function handleSignup(request, env) {
-  const { email, password } = await safeJson(request);
+  const { email, password, turnstileToken } = await safeJson(request);
   const cleanEmail = normalizeEmail(email);
+
+  const captchaOk = await verifyTurnstile(turnstileToken, env, request);
+  if (!captchaOk) return json({ error: "Verification failed. Please try again." }, 400);
 
   const validationError = validate(cleanEmail, password);
   if (validationError) return json({ error: validationError }, 400);
@@ -75,8 +78,11 @@ async function handleSignup(request, env) {
 }
 
 async function handleLogin(request, env) {
-  const { email, password } = await safeJson(request);
+  const { email, password, turnstileToken } = await safeJson(request);
   const cleanEmail = normalizeEmail(email);
+
+  const captchaOk = await verifyTurnstile(turnstileToken, env, request);
+  if (!captchaOk) return json({ error: "Verification failed. Please try again." }, 400);
 
   const user = await env.DB.prepare(
     "SELECT id, password_hash, password_salt FROM users WHERE email = ?"
@@ -121,6 +127,22 @@ function handleLogout() {
 }
 
 // ---------- helpers ----------
+
+async function verifyTurnstile(token, env, request) {
+  if (!token) return false;
+  const formData = new FormData();
+  formData.append("secret", env.TURNSTILE_SECRET_KEY);
+  formData.append("response", token);
+  const ip = request.headers.get("CF-Connecting-IP");
+  if (ip) formData.append("remoteip", ip);
+
+  const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+    method: "POST",
+    body: formData,
+  });
+  const data = await res.json();
+  return data.success === true;
+}
 
 async function createSession(env, userId) {
   const token = crypto.randomUUID() + crypto.randomUUID();
